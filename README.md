@@ -2,6 +2,12 @@
 
 把 PNG、JPEG、TIFF、BMP 或 WebP 转成可在 Adobe Illustrator 中编辑的 `.ai` 矢量路径，附带 SVG 和白底 PNG 预览。Codex 和 WorkBuddy 各有一个技能入口，转换由本机 VectorCraft 完成。
 
+## 真实案例 · structRFM 架构图
+
+![structRFM 位图和 Illustrator 矢量稿的前后对照](examples/structrfm/before-after.png)
+
+原位图经描摹后整理为 33 个可独立选择的分组。案例用 VectorCraft CLI 展示了单独移动配对特征矩阵的效果。 [查看元素拆分与编辑演示](examples/structrfm/) · [下载可编辑 .ai](examples/structrfm/structrfm-editable.ai)
+
 ## 一键安装
 
 准备 CPython 3.11 或更新版本、pip 22.3 或更新版本，以及支持 `--safe-mode` 和 Image Trace 的 VectorCraft。下面的命令还需要 Git。可在 VectorCraft 安装目录中找到 `vectorcraft-cli`。 [下载 VectorCraft](https://getartcraft.com/apps/vectorcraft)
