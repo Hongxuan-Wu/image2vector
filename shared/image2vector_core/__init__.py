@@ -9,7 +9,7 @@ Three moving parts:
 No Adobe application is involved anywhere in this package.
 """
 
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 
 from . import inspect_ai, pipeline, vc  # noqa: F401
 

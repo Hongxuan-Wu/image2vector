@@ -64,6 +64,32 @@ def build(output: str | Path, width: int = 1200, height: int = 800) -> dict:
     return {"image": str(target.resolve()), "width": width, "height": height}
 
 
+def build_light_gray(output: str | Path) -> Path:
+    """Both foreground and background fall above the black-and-white threshold."""
+    image = Image.new("RGB", (256, 192), "white")
+    ImageDraw.Draw(image).rectangle((32, 32, 223, 159), fill=(210, 210, 210))
+    target = Path(output)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    image.save(target)
+    return target
+
+
+def build_palette64(output: str | Path, width: int = 2048, height: int = 1536) -> Path:
+    """Equal-area swatches exceed the old 3 MP cutoff and the photo color budget."""
+    image = Image.new("RGB", (width, height))
+    draw = ImageDraw.Draw(image)
+    for index in range(64):
+        row, column = divmod(index, 8)
+        color = tuple(32 + ((index >> shift) & 3) * 64 for shift in (4, 2, 0))
+        draw.rectangle((column * width // 8, row * height // 8,
+                        (column + 1) * width // 8 - 1, (row + 1) * height // 8 - 1),
+                       fill=color)
+    target = Path(output)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    image.save(target)
+    return target
+
+
 if __name__ == "__main__":
     destination = sys.argv[1] if len(sys.argv) > 1 else "fixture.png"
     print(build(destination))

@@ -2,7 +2,7 @@
 name: image2vector
 description: 把用户指定的 PNG、JPEG、TIFF、BMP 或 WebP 位图转为可编辑的 Adobe Illustrator .ai 文件，同时输出 SVG 与 PNG 预览。适用于图片转 AI、位图描摹和图表矢量化。
 metadata:
-  version: "1.2.0"
+  version: "1.2.1"
 ---
 
 # image2vector

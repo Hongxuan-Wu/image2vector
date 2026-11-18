@@ -5,7 +5,7 @@ display_name_en: Image to Vector
 description: 把用户指定的 PNG、JPEG、TIFF、BMP 或 WebP 位图转为可编辑的 Adobe Illustrator .ai 文件，同时输出 SVG 与 PNG 预览。适用于图片转 AI、位图描摹和图表矢量化。
 description_zh: 用本机 VectorCraft 把位图转换成 Illustrator 矢量路径。
 description_en: Trace a raster image into editable Illustrator paths using local VectorCraft.
-version: "1.2.0"
+version: "1.2.1"
 author: image2vector contributors
 examples_zh:
   - 把这张流程图转成 Illustrator 可编辑的 AI 文件。

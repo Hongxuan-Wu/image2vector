@@ -59,6 +59,8 @@ $image2vectorPython = (Get-Content -LiteralPath (Join-Path $skillRoot 'python-pa
 | `--vc-cli` | Set the absolute path to a trusted VectorCraft executable |
 | `--work-dir` | Set the directory for intermediate files |
 
+In `auto` mode, an empty or failed tracing candidate is recorded and the remaining candidate is tried. Images larger than 3 MP also try the flat profile. The best successful candidate is chosen by rendered error within the existing color-budget guard; if every candidate fails, conversion fails. The JSON `candidates` list includes each candidate's `ok` status and any `error`, and skipped candidates are included in `warnings`. Large photographs may take longer because two candidates are tried; use `--mode photo` when a limited palette is intended.
+
 If VectorCraft cannot be found, point `VECTORCRAFT_CLI` to the local executable or write its absolute path to `~/.config/image2vector/vectorcraft-cli`. The legacy configuration file also works.
 
 ## Output and limitations
@@ -66,17 +68,18 @@ If VectorCraft cannot be found, point `VECTORCRAFT_CLI` to the local executable 
 - Conversion runs locally in VectorCraft Safe Mode. The skill decodes the bitmap, passes a PNG with metadata removed to VectorCraft, then reopens the `.ai` to check its path objects before delivery.
 - The input file limit is 128 MiB. The input image and scaled artboard each have a limit of 32 million pixels and 16,384 pixels per side. Conversion uses the first frame of a multi-frame file.
 - Text becomes outlines, gradients and photos are quantized into color regions, and strokes become filled paths.
-- Installation and conversion were verified on Windows. Installation commands are also provided for macOS and Linux.
+- Version 1.2.1 was tested on Linux with VectorCraft 0.24.1 and Pillow 13.0.0, including isolated installations for both clients. Windows was verified for v1.2.0; v1.2.1 on Windows and macOS still need verification.
 
 ## Development and verification
 
 `codex/` and `workbuddy/` contain the skill definitions. `shared/` contains the common runtime. The installer combines the relevant definition and runtime into a complete skill directory.
 
 ```bash
+python -I -B tests/test_auto.py
 python -I -B tests/test_safety.py
 python -I -B tests/test_conversion.py --output-root out/acceptance
 ```
 
-The full conversion tests also require PyMuPDF in the test environment to inspect the `.ai` file's PDF layer independently.
+The automatic-selection unit tests simulate engine replies and do not require VectorCraft. The full conversion tests use the real engine, include light-gray and 2048 × 1536 64-color fixtures, and also require PyMuPDF to inspect the `.ai` file's PDF layer independently. The palette regression checks both the trace color count and all 64 swatches in the rendered preview.
 
 [MIT License](LICENSE) · [Codex Skills documentation](https://learn.chatgpt.com/docs/build-skills) · [WorkBuddy Skills documentation](https://open.workbuddy.cn/docs/skill)

@@ -9,7 +9,9 @@ The check list is what a reviewer would actually open the file to verify:
  4. the rendered result matches the source raster, and the node count stayed sane,
  5. the preview and the SVG copy are real, not placeholders,
  6. a photograph goes through the photo profile without exploding,
- 7. the shipping package contains no COM bridge at all, so no code path exists
+ 7. light-gray artwork recovers from an empty black-and-white candidate,
+ 8. a high-resolution chart keeps all 64 swatch colors in automatic mode,
+ 9. the shipping package contains no COM bridge at all, so no code path exists
     that could start Illustrator even by accident.
 
 Run::
@@ -103,10 +105,13 @@ def _case(name: str, image: Path, work: Path, max_colors: int = 24) -> dict:
     artboard = reopened["artboards"][0]["rect"] if reopened["artboards"] else [0, 0, 0, 0]
     same_board = (round(artboard[2]), round(artboard[3])) == source_size
 
-    svg_paths = 0
+    svg_geometry = 0
     if svg_path.exists():
         root = ET.parse(svg_path).getroot()
-        svg_paths = sum(1 for _ in root.iter("{http://www.w3.org/2000/svg}path"))
+        # Simple traced shapes may be exported as SVG rects rather than paths.
+        shape_tags = {f"{{http://www.w3.org/2000/svg}}{kind}" for kind in
+                      ("path", "rect", "circle", "ellipse", "line", "polyline", "polygon")}
+        svg_geometry = sum(1 for node in root.iter() if node.tag in shape_tags)
 
     from PIL import Image
 
@@ -131,7 +136,7 @@ def _case(name: str, image: Path, work: Path, max_colors: int = 24) -> dict:
          "ok": "Path" in (reopened["kinds"] or {})
                or "Compound Path" in (reopened["kinds"] or {})},
         {"name": f"{name}: preview is the source size", "ok": preview_size == source_size},
-        {"name": f"{name}: SVG copy is real geometry", "ok": svg_paths > 0},
+        {"name": f"{name}: SVG copy is real geometry", "ok": svg_geometry > 0},
         {"name": f"{name}: node count stayed sane",
          "ok": (trace.get("paths") or 0) < max(400, pixel_area / 900)},
         {"name": f"{name}: close to the source (MAE < 4)",
@@ -168,6 +173,39 @@ def run(work: Path) -> dict:
 
     figure_case = _case("figure", fixture, work)
     photo_case = _case("photo", photo, work, max_colors=16)
+    gray = make_fixture.build_light_gray(work / "light-gray.png")
+    palette = make_fixture.build_palette64(work / "palette64.png")
+    gray_case = _case("light-gray", gray, work)
+    palette_case = _case("palette64", palette, work)
+
+    from PIL import Image
+
+    with Image.open(palette) as source, Image.open(palette_case["preview"]) as rendered:
+        source = source.convert("RGB")
+        rendered = rendered.convert("RGB")
+        centers = [(column * 256 + 128, row * 192 + 96)
+                   for row in range(8) for column in range(8)]
+        expected = [source.getpixel(point) for point in centers]
+        actual = [rendered.getpixel(point) for point in centers]
+    gray_candidates = gray_case["report"]["candidates"]
+    regression_checks = [
+        {"name": "light-gray: empty bw candidate recorded",
+         "ok": any(a["mode"] == "bw" and not a.get("ok", True)
+                   and "no traced paths" in a.get("error", "") for a in gray_candidates)},
+        {"name": "light-gray: automatic fallback chose flat",
+         "ok": gray_case["report"]["mode"] == "flat"},
+        {"name": "palette64: fixture exceeds the old 3 MP cutoff",
+         "ok": vc.analyze(palette)["megapixels"] > 3.0},
+        {"name": "palette64: automatic selection chose flat",
+         "ok": palette_case["report"]["mode"] == "flat"},
+        {"name": "palette64: trace retains all 64 colors",
+         "ok": palette_case["report"]["colors"] == 64},
+        {"name": "palette64: rendered swatches retain all 64 colors",
+         "ok": len(set(expected)) == len(set(actual)) == 64},
+        {"name": "palette64: each rendered swatch matches its source",
+         "ok": all(max(abs(a - b) for a, b in zip(want, got)) <= 3
+                   for want, got in zip(expected, actual))},
+    ]
 
     photo_checks = [
         {"name": "photo took the photo profile",
@@ -178,12 +216,15 @@ def run(work: Path) -> dict:
          "note": ", ".join(_com_free()) or "no win32com / Illustrator.Application"},
     ]
 
-    checks = figure_case["checks"] + photo_case["checks"] + photo_checks
+    checks = (figure_case["checks"] + photo_case["checks"] + photo_checks
+              + gray_case["checks"] + palette_case["checks"] + regression_checks)
     return {
         "status": "PASS" if all(item["ok"] for item in checks) else "FAIL",
         "checks": checks,
         "figure": figure_case,
         "photo": photo_case,
+        "light-gray": gray_case,
+        "palette64": palette_case,
     }
 
 
@@ -201,7 +242,7 @@ def main(argv=None) -> int:
     for check in result["checks"]:
         note = f"  ({check['note']})" if check.get("note") else ""
         print(f"  [{'PASS' if check['ok'] else 'FAIL'}] {check['name']}{note}")
-    for name in ("figure", "photo"):
+    for name in ("figure", "photo", "light-gray", "palette64"):
         case = result[name]
         report = case["report"]
         print(f"  {name}: mode={report['mode']} paths={report['paths']} "

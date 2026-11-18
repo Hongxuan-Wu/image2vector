@@ -352,8 +352,6 @@ def score(source: Path, rendered: Path) -> dict:
 # --------------------------------------------------------------------------- #
 def _auto_modes(profile: dict) -> list[str]:
     """Candidate profiles to try when the caller did not name one."""
-    if profile["megapixels"] > 3.0:
-        return ["photo"]
     modes = ["flat", "photo"]
     if profile["saturation"] < 0.02 and profile["distinct_colors"] <= 24:
         modes = ["bw", "flat"]
@@ -429,24 +427,39 @@ def trace(source: Path, scratch: Path, *, preview: bool, svg: bool,
 
     modes = _auto_modes(profile) if mode == "auto" else [mode]
     attempts: list[dict] = []
+    candidates: list[dict] = []
     for index, kind in enumerate(modes):
         params = params_for(profile, max_colors=max_colors, mode=kind,
                             overrides=overrides)
         candidate = scratch / f"candidate-{index}-{kind}"
-        attempt = _attempt(
-            executable, bitmap, candidate.with_suffix(".ai"), candidate.with_suffix(".png"),
-            params, by_color, scale, profile, timeout, candidate.with_suffix(".json"),
-            svg_path=candidate.with_suffix(".svg") if svg else None,
-        )
+        started = time.monotonic()
+        try:
+            attempt = _attempt(
+                executable, bitmap, candidate.with_suffix(".ai"), candidate.with_suffix(".png"),
+                params, by_color, scale, profile, timeout, candidate.with_suffix(".json"),
+                svg_path=candidate.with_suffix(".svg") if svg else None,
+            )
+            attempt["score"] = score(bitmap, attempt["png"])
+        except VectorCraftError as error:
+            if mode != "auto":
+                raise
+            candidates.append({"mode": kind, "ok": False, "error": str(error),
+                               "seconds": round(time.monotonic() - started, 2)})
+            continue
         attempt["mode"] = kind
         attempt["params"] = params
-        attempt["score"] = score(bitmap, attempt["png"])
         # A flat-profile trace of a photograph explodes into hundreds of
         # colours: keep it only if nothing else wins.
         attempt["over_colored"] = bool(
             attempt["colors"] and attempt["colors"] > 4 * max(4, max_colors))
         attempts.append(attempt)
+        candidates.append({"mode": kind, "ok": True, "paths": attempt["paths"],
+                           "colors": attempt["colors"], **attempt["score"],
+                           "seconds": attempt["seconds"]})
 
+    if not attempts:
+        detail = "; ".join(f"{a['mode']}: {a['error']}" for a in candidates)
+        raise VectorCraftError(f"All tracing candidates failed: {detail}")
     usable = [a for a in attempts if not a["over_colored"]] or attempts
     best = min(usable, key=lambda a: (a["score"]["mae"], a["paths"] or 10 ** 9))
 
@@ -476,19 +489,18 @@ def trace(source: Path, scratch: Path, *, preview: bool, svg: bool,
         "paths": best["paths"],
         "anchors": best["anchors"],
         "colors": best["colors"],
-        "seconds": round(sum(a["seconds"] for a in attempts), 2),
+        "seconds": round(sum(a["seconds"] for a in candidates), 2),
         "mode": best["mode"],
         "profile": profile,
         "params": best["params"],
         "by_color": bool(by_color),
         "fidelity": best["score"],
-        "candidates": [
-            {"mode": a["mode"], "paths": a["paths"], "colors": a["colors"],
-             **a["score"], "seconds": a["seconds"]}
-            for a in attempts
-        ],
+        "candidates": candidates,
         "objects": reopened["objects"],
-        "warnings": list(dict.fromkeys([*best["warnings"], *reopened["warnings"]])),
+        "warnings": list(dict.fromkeys([
+            *best["warnings"], *reopened["warnings"],
+            *(f"Skipped {a['mode']} candidate: {a['error']}" for a in candidates if not a["ok"]),
+        ])),
     }
 
 
