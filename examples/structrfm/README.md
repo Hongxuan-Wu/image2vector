@@ -1,35 +1,41 @@
-# structRFM 架构图案例
+# Case study · structRFM architecture
 
-把作者发布的 structRFM 架构位图转成可编辑的 `.ai` 文件。保留应用、结构引导预训练和掩码策略三个面板。原图尺寸为 1848 × 2008 像素。
+**English** · [简体中文](README_CN.md)
 
-[下载可编辑 .ai](structrfm-editable.ai) · [原始位图](before.png) · [矢量渲染](after.png)
+The authors' structRFM architecture figure was traced into an editable `.ai` file. The result preserves the three panels on applications, structure-guided pre-training, and masking. The original bitmap measures 1848 × 2008 pixels.
 
-## 矢量化前后
+[Download the editable .ai](structrfm-editable.ai) · [Original bitmap](before.png) · [Vector render](after.png)
 
-左侧是作者仓库的 PNG，右侧是 VectorCraft CLI 重开最终 `.ai` 后的渲染。两侧比例相同。
+## Before and after
 
-![structRFM 原始位图和矢量渲染的并排对照](before-after.png)
+The left panel shows the PNG from the authors' repository. The right panel shows the rendering after VectorCraft CLI reopened the final `.ai`. Both are shown at the same scale.
 
-## 单独移动一个元素
+![Side-by-side comparison of the original structRFM bitmap and the rendered vector file](before-after.png)
 
-VectorCraft CLI 在最终 `.ai` 的临时会话中显示两个相邻分组，选中配对特征矩阵并向右移动 86 pt、向上移动 14 pt。相邻的核苷酸特征矩阵边界保持原位。绿框标注测得的选中边界。
+## Moving one element
 
-![配对矩阵移动前后，相邻的核苷酸矩阵保持原位](move-proof.png)
+In a temporary session, VectorCraft CLI opens the final `.ai`, isolates two adjacent groups, and moves the selected pairwise feature matrix 86 pt to the right and 14 pt up. The neighboring nucleotide-wise feature matrix stays in place. The green outlines show the measured selection bounds.
 
-## 元素拆分
+![The pairwise matrix moves while the neighboring nucleotide-wise matrix stays in place](move-proof.png)
 
-`.ai` 重开后包含 **4 个图层、33 个命名分组和 10,417 个路径或复合路径对象**。PDF 层检查确认嵌入位图数量为 0。展开图层可以选中整个模块，再编辑分组中的路径。文字采用轮廓，相邻且相连的同色区域可能共享路径。
+## Separated elements
 
-![从最终 AI 文件取出并分别渲染的 33 个元素分组](separated-elements.png)
+The reopened `.ai` contains **4 layers, 33 named groups, and 10,417 path or compound path objects**. Inspection of the PDF layer found zero embedded bitmaps. Expand a layer to select a whole module or edit individual paths in its group. Text is outlined, and connected regions of the same color may share a path.
 
-## 转换与来源
+![The 33 groups extracted and rendered separately from the final AI file](separated-elements.png)
 
-用 README 安装的 Python 环境从仓库根目录运行 image2vector。
+## Conversion and source figure
+
+From the repository root, run image2vector using the Python environment created by the installer.
 
 ```bash
 python -I -B shared/scripts/image2vector.py --mode flat -o out/structrfm-traced.ai -- examples/structrfm/before.png
 ```
 
-本案例将描摹后的路径按图中位置重组并命名，再用 VectorCraft CLI 导出和重开 `.ai`，完成选择、移动和渲染验证。整个案例流程由命令行完成。
+For this case study, the traced paths were organized into named groups based on their positions in the figure. VectorCraft CLI exported and reopened the `.ai` to verify selection, movement, and rendering. The entire workflow runs from the command line.
 
-输入为 Heqin Zhu 等人在项目仓库发布的 `images/Fig1.png`。改动包括位图描摹、按模块分组和制作对照图。随案例保留原始 MIT 许可。 [作者发布的原图](https://github.com/heqin-zhu/structRFM/blob/13be9088d5201051abebcf31896cf370ae395c5f/images/Fig1.png) · [上游许可和署名](LICENSE-structRFM.txt) · [研究论文](https://doi.org/10.1038/s41586-026-11210-2)
+The source bitmap is `images/Fig1.png` from Heqin Zhu and colleagues' structRFM repository. The adaptations include tracing the bitmap, grouping the paths by module, and producing comparisons. The original MIT license accompanies the example. [Source figure](https://github.com/heqin-zhu/structRFM/blob/13be9088d5201051abebcf31896cf370ae395c5f/images/Fig1.png) · [Upstream license and attribution](LICENSE-structRFM.txt)
+
+## Paper citation
+
+Zhu, H., Li, R., Chang, A. et al. An open structure-guided RNA foundation model for generalizable prediction. *Nature* (2026). [DOI 10.1038/s41586-026-11210-2](https://doi.org/10.1038/s41586-026-11210-2)

@@ -1,16 +1,18 @@
 # image2vector
 
-把 PNG、JPEG、TIFF、BMP 或 WebP 转成可在 Adobe Illustrator 中编辑的 `.ai` 矢量路径，附带 SVG 和白底 PNG 预览。Codex 和 WorkBuddy 各有一个技能入口，转换由本机 VectorCraft 完成。
+**English** · [简体中文](README_CN.md)
 
-## 真实案例 · structRFM 架构图
+Convert PNG, JPEG, TIFF, BMP, or WebP images into editable Illustrator `.ai` paths, with an SVG copy and a white-background PNG preview. image2vector provides a skill for Codex and a skill for WorkBuddy. VectorCraft runs the conversion locally.
 
-![structRFM 位图和 Illustrator 矢量稿的前后对照](examples/structrfm/before-after.png)
+## Case study · structRFM architecture
 
-原位图经描摹后整理为 33 个可独立选择的分组。案例用 VectorCraft CLI 展示了单独移动配对特征矩阵的效果。 [查看元素拆分与编辑演示](examples/structrfm/) · [下载可编辑 .ai](examples/structrfm/structrfm-editable.ai)
+![The original structRFM bitmap beside the rendered Illustrator vector file](examples/structrfm/before-after.png)
 
-## 一键安装
+The traced figure has 33 independently selectable groups. The case study shows how VectorCraft CLI moves the pairwise feature matrix on its own. [See the editing demo](examples/structrfm/README.md) · [Download the editable .ai](examples/structrfm/structrfm-editable.ai) · [Zhu et al., *Nature* (2026)](https://doi.org/10.1038/s41586-026-11210-2)
 
-准备 CPython 3.11 或更新版本、pip 22.3 或更新版本，以及支持 `--safe-mode` 和 Image Trace 的 VectorCraft。下面的命令还需要 Git。可在 VectorCraft 安装目录中找到 `vectorcraft-cli`。 [下载 VectorCraft](https://getartcraft.com/apps/vectorcraft)
+## One-command installation
+
+Install CPython 3.11 or later, pip 22.3 or later, and VectorCraft with support for `--safe-mode` and Image Trace. The commands below also require Git. The `vectorcraft-cli` executable is in the VectorCraft installation directory. [Download VectorCraft](https://getartcraft.com/apps/vectorcraft)
 
 **Windows PowerShell**
 
@@ -18,28 +20,28 @@
 $image2vectorDir = Join-Path ([IO.Path]::GetTempPath()) ("image2vector-" + [guid]::NewGuid().ToString("N")); git clone --depth 1 https://github.com/Hongxuan-Wu/image2vector.git $image2vectorDir; if ($LASTEXITCODE -eq 0) { python -I -B (Join-Path $image2vectorDir "install.py") --target both }
 ```
 
-**macOS 或 Linux 的 Bash**
+**Bash on macOS or Linux**
 
 ```bash
 image2vector_dir="$(mktemp -d)" && git clone --depth 1 https://github.com/Hongxuan-Wu/image2vector.git "$image2vector_dir" && python3 -I -B "$image2vector_dir/install.py" --target both
 ```
 
-也可以通过 GitHub 的 **Code → Download ZIP** 获取源码，在解压目录运行 `python -I -B install.py --target both`（macOS 或 Linux 使用 `python3`）。只装一个客户端时，把 `both` 改为 `codex` 或 `workbuddy`。
+You can also download the source from **Code → Download ZIP** on GitHub. Extract the archive and run `python -I -B install.py --target both` from the extracted directory. Use `python3` on macOS or Linux. To install for just one client, replace `both` with `codex` or `workbuddy`.
 
-| 客户端 | 新安装的位置 |
+| Client | Fresh install location |
 | --- | --- |
 | Codex | `~/.agents/skills/image2vector` |
 | WorkBuddy | `~/.workbuddy/skills/image2vector` |
 
-安装器在 `~/.image2vector/install-*/venv` 创建隔离环境，从 PyPI 下载并校验锁定的 Pillow 13.0.0 wheel。可用 `--python` 指定已有的 Python 3.11+ 环境，该环境须含 Pillow 13.0.0。升级时，识别到的旧技能目录会移到同一次安装的 `backups/`。使用 `~/.codex/skills` 的已有 Codex 安装可在原位置升级。
+The installer creates an isolated environment at `~/.image2vector/install-*/venv`, downloads the pinned Pillow 13.0.0 wheel from PyPI, and verifies its hash. Use `--python` to point to an existing Python 3.11+ environment with Pillow 13.0.0. During an upgrade, the installer moves recognized skill directories to that installation's `backups/` directory. Existing Codex installations under `~/.codex/skills` can be upgraded in place.
 
-## 使用
+## Usage
 
-安装后新开一个对话、附上图片，然后发送「用 image2vector 把这张图转成 Illustrator 可编辑的 AI 文件」。Codex 可以用 `$image2vector` 调用；WorkBuddy 可以在技能列表选择「图片转矢量图」。
+Start a new chat, attach an image, and ask “Use image2vector to convert this image into an editable Illustrator file.” Use `$image2vector` in Codex or select **Image to Vector** from the WorkBuddy skill list.
 
-默认产物为 `图.ai`、`图.svg`、`图-preview.png`。已有同名文件时请指定新的输出路径。转换详情与候选结果保存在输出旁的 `.ai-work/job-*/`。这当中会保留去除输入元数据的像素副本。
+The default outputs are `figure.ai`, `figure.svg`, and `figure-preview.png`. Specify a new output path when a file with the same name already exists. Conversion details and candidate outputs are saved in `.ai-work/job-*/` beside the output, along with a copy of the input pixels with metadata removed.
 
-Windows 上可以用 PowerShell 调用 Codex 新装目录中的脚本。
+On Windows, you can run the script from a fresh Codex installation with PowerShell.
 
 ```powershell
 $skillRoot = Join-Path $env:USERPROFILE '.agents/skills/image2vector'
@@ -47,34 +49,34 @@ $image2vectorPython = (Get-Content -LiteralPath (Join-Path $skillRoot 'python-pa
 & $image2vectorPython -I -B (Join-Path $skillRoot 'scripts/image2vector.py') --mode flat -o '.\result.ai' -- '.\figure.png'
 ```
 
-| 参数 | 用途 |
+| Option | Purpose |
 | --- | --- |
-| `-o` | 设置新 `.ai` 的路径 |
-| `--mode auto│flat│photo│bw` | 自动选档、扁平图、照片或黑白线稿 |
-| `--max-colors 4…64` | 设置照片档色数，默认 24 |
-| `--scale` | 设置画板倍率，默认一像素对应一 pt |
-| `--no-preview`、`--no-svg` | 跳过相应的副本 |
-| `--vc-cli` | 指定可信 VectorCraft 可执行文件的绝对路径 |
-| `--work-dir` | 指定中间文件目录 |
+| `-o` | Set the path for the new `.ai` file |
+| `--mode auto│flat│photo│bw` | Use automatic profile selection, flat artwork, photo, or black-and-white line art |
+| `--max-colors 4…64` | Set the photo profile's color budget, which defaults to 24 |
+| `--scale` | Scale the artboard, which defaults to one point per pixel |
+| `--no-preview`, `--no-svg` | Skip the corresponding output |
+| `--vc-cli` | Set the absolute path to a trusted VectorCraft executable |
+| `--work-dir` | Set the directory for intermediate files |
 
-如果找不到 VectorCraft，将 `VECTORCRAFT_CLI` 指向实际的本地可执行文件，或把绝对路径写入 `~/.config/image2vector/vectorcraft-cli`。旧版同名配置文件继续适用。
+If VectorCraft cannot be found, point `VECTORCRAFT_CLI` to the local executable or write its absolute path to `~/.config/image2vector/vectorcraft-cli`. The legacy configuration file also works.
 
-## 输出与限制
+## Output and limitations
 
-- 转换使用本机 VectorCraft 的 Safe Mode。程序先解码位图，再把去除元数据的 PNG 交给引擎，发布前重新打开 `.ai` 检查路径对象。
-- 输入上限为 128 MiB。源图与缩放后的画板上限均为 3,200 万像素，单边上限为 16,384。多帧文件处理首帧。
-- 字体描摹为轮廓，渐变和照片量化为色块，描边最终表现为填充路径。
-- 安装及实际转换在 Windows 上验证。macOS 和 Linux 提供安装命令。
+- Conversion runs locally in VectorCraft Safe Mode. The skill decodes the bitmap, passes a PNG with metadata removed to VectorCraft, then reopens the `.ai` to check its path objects before delivery.
+- The input file limit is 128 MiB. The input image and scaled artboard each have a limit of 32 million pixels and 16,384 pixels per side. Conversion uses the first frame of a multi-frame file.
+- Text becomes outlines, gradients and photos are quantized into color regions, and strokes become filled paths.
+- Installation and conversion were verified on Windows. Installation commands are also provided for macOS and Linux.
 
-## 开发与验收
+## Development and verification
 
-`codex/` 和 `workbuddy/` 各自存放技能定义，`shared/` 提供共同的运行代码。安装器将对应定义和运行代码装配成完整的技能目录。
+`codex/` and `workbuddy/` contain the skill definitions. `shared/` contains the common runtime. The installer combines the relevant definition and runtime into a complete skill directory.
 
 ```bash
 python -I -B tests/test_safety.py
 python -I -B tests/test_conversion.py --output-root out/acceptance
 ```
 
-完整转换验收还需要在测试用 Python 环境中安装 PyMuPDF，以便独立读取 AI 文件的 PDF 层。
+The full conversion tests also require PyMuPDF in the test environment to inspect the `.ai` file's PDF layer independently.
 
-[MIT 许可证](LICENSE) · [Codex Skills 文档](https://learn.chatgpt.com/docs/build-skills) · [WorkBuddy 技能文档](https://open.workbuddy.cn/docs/skill)
+[MIT License](LICENSE) · [Codex Skills documentation](https://learn.chatgpt.com/docs/build-skills) · [WorkBuddy Skills documentation](https://open.workbuddy.cn/docs/skill)
