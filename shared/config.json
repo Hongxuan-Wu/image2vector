@@ -1,0 +1,9 @@
+{
+  "name": "image2vector",
+  "entry": "scripts/image2vector.py",
+  "engine": "vectorcraft-cli",
+  "requires": [
+    "VectorCraft (vectorcraft-cli on PATH or VECTORCRAFT_CLI)",
+    "Pillow 13.0.0"
+  ]
+}
